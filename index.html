@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formatura Vitória Dzwieleski</title>
+    <title>Câmera Nativa com Filtro</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -152,11 +152,13 @@
         const filterImage = new Image();
         filterImage.src = 'https://i.postimg.cc/k5PckJLb/85130723-c7a6-4d13-91a8-f4788a95c5ce-20250316-154127-0000.png'; // URL do filtro
 
-        // Função para gerar um nome único baseado na data e hora atual
+        // Função para gerar nome único baseado na data e hora atual (FormaturaVitoria-HHMMSS)
         function generateUniqueName(prefix) {
             const now = new Date();
-            const date = now.toISOString().slice(0, 19).replace("T", "-").replace(/:/g, "-");
-            return `${prefix}-${date}`;
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${prefix}-${hours}${minutes}${seconds}`;
         }
 
         // Função para iniciar a câmera com áudio
@@ -197,7 +199,7 @@
                 const videoURL = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = videoURL;
-                a.download = generateUniqueName('video') + '.mp4'; // Usa nome único para o vídeo
+                a.download = generateUniqueName('FormaturaVitoria') + '.mp4'; // Usa nome único para o vídeo
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -220,7 +222,7 @@
 
             const a = document.createElement('a');
             a.href = photoDataUrl;
-            a.download = generateUniqueName('IMG') + '.png';  // Usa nome único para a foto
+            a.download = generateUniqueName('FormaturaVitoria') + '.png';  // Usa nome único para a foto
             a.click();
         }
 
@@ -274,21 +276,6 @@
                     recordingInterval = setInterval(updateRecordingTime, 1000); // Começa o contador
                 }
             }
-        });
-
-        // Função para desenhar o filtro sobre o vídeo
-        function drawFilter() {
-            filterCanvas.width = camera.videoWidth;
-            filterCanvas.height = camera.videoHeight;
-
-            ctx.clearRect(0, 0, filterCanvas.width, filterCanvas.height);
-            ctx.drawImage(camera, 0, 0, filterCanvas.width, filterCanvas.height);
-            ctx.drawImage(filterImage, 0, 0, filterCanvas.width, filterCanvas.height);
-        }
-
-        // Desenha o filtro no canvas a cada frame
-        camera.addEventListener('play', function () {
-            setInterval(drawFilter, 1000 / 30); // 30 FPS
         });
 
         // Inicia a câmera assim que a página carrega
