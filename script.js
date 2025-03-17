@@ -13,60 +13,71 @@ let recordedChunks = [];
 let isRecording = false;
 let isPhotoMode = true;
 
+// Carregar a imagem do filtro (moldura) do arquivo "Canvas.png"
+const filterImage = new Image();
+filterImage.src = 'Canvas.png'; // Caminho para a imagem local "Canvas.png"
+
 // Função para iniciar a câmera
 function startCamera() {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: true // Solicita permissão para o microfone
+    })
         .then(stream => {
             camera.srcObject = stream;
-            startRecording(stream); // Inicia a gravação se for vídeo
+
+            // Desabilita o áudio no stream (não reproduz no site, mas grava)
+            const audioTracks = stream.getAudioTracks();
+            audioTracks.forEach(track => track.enabled = false); // Desabilita o áudio
+
+            // Inicia o mediaRecorder para gravação (se necessário)
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                recordedChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                downloadVideoLink.href = url;
+                downloadVideoLink.style.display = 'block';
+                downloadVideoLink.download = 'video.webm';
+            };
         })
         .catch(err => {
-            console.error('Erro ao acessar a câmera:', err);
-            alert('Não foi possível acessar a câmera. Verifique as permissões.');
+            console.error('Erro ao acessar a câmera e microfone:', err);
+            alert('Não foi possível acessar a câmera ou microfone. Verifique as permissões.');
         });
 }
 
-// Função para iniciar a gravação de vídeo
-function startRecording(stream) {
-    const options = { mimeType: 'video/webm;codecs=vp9' };
-
-    mediaRecorder = new MediaRecorder(stream, options);
-
-    mediaRecorder.ondataavailable = event => {
-        recordedChunks.push(event.data);
-    };
-
-    mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-
-        // Baixa automaticamente o vídeo após a gravação
-        const videoURL = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = videoURL;
-        a.download = 'video.mp4'; // Forçando o download com extensão .mp4
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
-}
-
-// Função para capturar uma foto
+// Função para capturar uma foto com o filtro (moldura) aplicado com delay
 function capturePhoto() {
-    const largura = camera.videoWidth;
-    const altura = camera.videoHeight;
+    // Aguardar até que a imagem do filtro tenha sido carregada
+    filterImage.onload = function() {
+        const largura = camera.videoWidth;
+        const altura = camera.videoHeight;
 
-    canvas.width = largura;
-    canvas.height = altura;
+        canvas.width = largura;
+        canvas.height = altura;
 
-    // Desenha o vídeo no canvas
-    contexto.drawImage(camera, 0, 0, largura, altura);
+        // Desenha o vídeo no canvas
+        contexto.drawImage(camera, 0, 0, largura, altura);
 
-    // Converte a imagem para base64 e baixa automaticamente
-    const fotoBase64 = canvas.toDataURL('image/png');
-    downloadLink.href = fotoBase64;
-    downloadLink.style.display = 'block';
-    downloadLink.click();  // Baixa automaticamente
+        // Desenha o filtro (moldura) sobre a imagem capturada
+        contexto.drawImage(filterImage, 0, 0, largura, altura);
+
+        // Converte a imagem para base64 e faz o download
+        const fotoBase64 = canvas.toDataURL('image/png');
+        downloadLink.href = fotoBase64;
+        downloadLink.style.display = 'block';
+        downloadLink.click();  // Baixa automaticamente a foto com o filtro
+    };
+
+    // Se a imagem já estiver carregada, chama a função de captura imediatamente
+    if (filterImage.complete) {
+        filterImage.onload();
+    }
 }
 
 // Alterna entre os modos de foto e vídeo
@@ -97,10 +108,7 @@ captureButton.addEventListener('click', () => {
             captureButton.innerHTML = '<i class="fas fa-video"></i>'; // Ícone de vídeo
             captureButton.classList.remove('recording');
         } else {
-            mediaRecorder.start(); // Inicia a gravação
-            isRecording = true;
-            captureButton.innerHTML = '<i class="fas fa-stop"></i>'; // Ícone de parar gravação
-            captureButton.classList.add('recording');
+            startRecording(); // Inicia a gravação com o filtro
         }
     }
 });
