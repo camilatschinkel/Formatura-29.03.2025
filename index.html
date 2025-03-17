@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Câmera Nativa com Filtro</title>
+    <title>Formatura Vitória Dzwieleski</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -152,6 +152,13 @@
         const filterImage = new Image();
         filterImage.src = 'https://i.postimg.cc/k5PckJLb/85130723-c7a6-4d13-91a8-f4788a95c5ce-20250316-154127-0000.png'; // URL do filtro
 
+        // Função para gerar um nome único baseado na data e hora atual
+        function generateUniqueName(prefix) {
+            const now = new Date();
+            const date = now.toISOString().slice(0, 19).replace("T", "-").replace(/:/g, "-");
+            return `${prefix}-${date}`;
+        }
+
         // Função para iniciar a câmera com áudio
         function startCamera() {
             navigator.mediaDevices.getUserMedia({ 
@@ -190,7 +197,7 @@
                 const videoURL = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = videoURL;
-                a.download = 'video.mp4'; // Baixa o vídeo como arquivo mp4
+                a.download = generateUniqueName('video') + '.mp4'; // Usa nome único para o vídeo
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -213,7 +220,7 @@
 
             const a = document.createElement('a');
             a.href = photoDataUrl;
-            a.download = 'photo.png';  // Baixa a foto automaticamente
+            a.download = generateUniqueName('IMG') + '.png';  // Usa nome único para a foto
             a.click();
         }
 
