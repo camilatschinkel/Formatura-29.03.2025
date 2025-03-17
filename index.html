@@ -170,13 +170,6 @@
                 console.error('Erro ao acessar a câmera:', err);
                 alert('Não foi possível acessar a câmera. Verifique as permissões.');
             });
-       
-            // Função para gerar um nome único baseado na data e hora atual
-        function generateUniqueName(prefix) {
-            const now = new Date();
-            const date = now.toISOString().slice(0, 19).replace("T", "-").replace(/:/g, "-");
-            return `${prefix}-${date}`;
-        
         }
 
         // Função para iniciar a gravação de vídeo e áudio
