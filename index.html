@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Câmera Nativa com Gravação de Vídeo e Áudio</title>
+    <title>Câmera Nativa com Filtro</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -36,6 +36,16 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
+        }
+
+        /* Canvas para desenhar o filtro */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Impede que o canvas interfira na interação com o vídeo */
         }
 
         /* Botão para capturar foto ou gravar vídeo */
@@ -109,6 +119,10 @@
 <body>
     <div class="camera-container">
         <video id="camera" autoplay playsinline></video>
+
+        <!-- Canvas para desenhar o filtro -->
+        <canvas id="filterCanvas"></canvas>
+
         <div class="mode-buttons">
             <button id="photoModeButton" class="mode-button active">Foto</button>
             <button id="videoModeButton" class="mode-button">Vídeo</button>
@@ -125,6 +139,8 @@
         const photoModeButton = document.getElementById('photoModeButton');
         const videoModeButton = document.getElementById('videoModeButton');
         const recordingTimeDisplay = document.getElementById('recordingTime');
+        const filterCanvas = document.getElementById('filterCanvas');
+        const ctx = filterCanvas.getContext('2d');
 
         let mediaRecorder;
         let recordedChunks = [];
@@ -132,6 +148,9 @@
         let isPhotoMode = true;
         let recordingTime = 0; // Tempo de gravação em segundos
         let recordingInterval;
+
+        const filterImage = new Image();
+        filterImage.src = 'https://i.postimg.cc/k5PckJLb/85130723-c7a6-4d13-91a8-f4788a95c5ce-20250316-154127-0000.png'; // URL do filtro
 
         // Função para iniciar a câmera com áudio
         function startCamera() {
@@ -160,6 +179,7 @@
                 clearInterval(recordingInterval); // Para o contador
                 const blob = new Blob(recordedChunks, { type: 'video/webm' });
 
+                // Convertendo de webm para mp4
                 const videoURL = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = videoURL;
@@ -194,7 +214,7 @@
         function updateRecordingTime() {
             const minutes = Math.floor(recordingTime / 60);
             const seconds = recordingTime % 60;
-            recordingTimeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            recordingTimeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; 
             recordingTime++; // Incrementa o tempo
         }
 
@@ -240,6 +260,20 @@
                     recordingInterval = setInterval(updateRecordingTime, 1000); // Começa o contador
                 }
             }
+        });
+
+        // Função para desenhar o filtro no canvas
+        function drawFilter() {
+            filterCanvas.width = camera.videoWidth;
+            filterCanvas.height = camera.videoHeight;
+            ctx.clearRect(0, 0, filterCanvas.width, filterCanvas.height);
+            ctx.drawImage(camera, 0, 0, filterCanvas.width, filterCanvas.height); // Desenha o vídeo
+            ctx.drawImage(filterImage, 0, 0, filterCanvas.width, filterCanvas.height); // Aplica o filtro
+        }
+
+        // Desenhar o filtro em tempo real
+        camera.addEventListener('play', () => {
+            setInterval(drawFilter, 30); // Atualiza a cada 30ms
         });
 
         // Inicia a câmera assim que a página carrega
