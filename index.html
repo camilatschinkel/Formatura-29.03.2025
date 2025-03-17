@@ -22,12 +22,6 @@
             overflow: hidden;
         }
 
-        #camera {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
         .camera-container {
             position: relative;
             width: 100%;
@@ -38,14 +32,27 @@
             flex-direction: column;
         }
 
-        /* Canvas para desenhar o filtro */
-        canvas {
+        /* Filtro Canvas.png sobre a câmera */
+        .filter {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* Impede que o canvas interfira na interação com o vídeo */
+            object-fit: cover;
+            pointer-events: none; /* Impede que a imagem do filtro interfira na interação com o vídeo */
+            z-index: 2; /* Garante que o filtro fique acima do vídeo */
+        }
+
+        /* Exibição do vídeo da câmera */
+        #camera {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
 
         /* Botão para capturar foto ou gravar vídeo */
@@ -62,6 +69,7 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             transition: background-color 0.3s ease, transform 0.2s ease;
+            z-index: 3; /* Coloca o botão acima do filtro e vídeo */
         }
 
         .capture-button:hover {
@@ -82,6 +90,7 @@
             display: flex;
             justify-content: center;
             width: 100%;
+            z-index: 3; /* Coloca os botões acima do vídeo e filtro */
         }
 
         .mode-button {
@@ -113,15 +122,17 @@
             font-size: 20px;
             font-weight: bold;
             margin-left: 100px; /* Distância do tempo em relação ao botão de captura */
+            z-index: 3; /* Coloca o contador de tempo acima do vídeo e filtro */
         }
     </style>
 </head>
 <body>
     <div class="camera-container">
+        <!-- Exibição do vídeo da câmera -->
         <video id="camera" autoplay playsinline></video>
 
-        <!-- Canvas para desenhar o filtro -->
-        <canvas id="filterCanvas"></canvas>
+        <!-- Filtro Canvas.png sobre a câmera -->
+        <img id="filter" src="Canvas.png" alt="Filtro" class="filter">
 
         <div class="mode-buttons">
             <button id="photoModeButton" class="mode-button active">Foto</button>
@@ -139,9 +150,6 @@
         const photoModeButton = document.getElementById('photoModeButton');
         const videoModeButton = document.getElementById('videoModeButton');
         const recordingTimeDisplay = document.getElementById('recordingTime');
-        const filterCanvas = document.getElementById('filterCanvas');
-        const ctx = filterCanvas.getContext('2d');
-
         let mediaRecorder;
         let recordedChunks = [];
         let isRecording = false;
@@ -149,36 +157,18 @@
         let recordingTime = 0; // Tempo de gravação em segundos
         let recordingInterval;
 
-        const filterImage = new Image();
-        filterImage.src = 'https://i.postimg.cc/k5PckJLb/85130723-c7a6-4d13-91a8-f4788a95c5ce-20250316-154127-0000.png'; // URL do filtro
-
-        // Função para gerar nome único baseado na data e hora atual (FormaturaVitoria-HHMMSS)
-        function generateUniqueName(prefix) {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            return `${prefix}-${hours}${minutes}${seconds}`;
-        }
-
         // Função para iniciar a câmera com áudio
         function startCamera() {
-            navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'environment', 
-                    width: { ideal: 1280 },  // Resolução HD (1280x720)
-                    height: { ideal: 720 }
-                }, 
-                audio: true 
-            })
-            .then(stream => {
-                camera.srcObject = stream;
-                startRecording(stream); // Inicia a gravação de vídeo e áudio
-            })
-            .catch(err => {
-                console.error('Erro ao acessar a câmera:', err);
-                alert('Não foi possível acessar a câmera. Verifique as permissões.');
-            });
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true })
+                .then(stream => {
+                    console.log("Câmera iniciada com sucesso");
+                    camera.srcObject = stream;
+                    startRecording(stream); // Inicia a gravação de vídeo e áudio
+                })
+                .catch(err => {
+                    console.error('Erro ao acessar a câmera:', err);
+                    alert('Não foi possível acessar a câmera. Verifique as permissões.');
+                });
         }
 
         // Função para iniciar a gravação de vídeo e áudio
@@ -199,7 +189,7 @@
                 const videoURL = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = videoURL;
-                a.download = generateUniqueName('FormaturaVitoria') + '.mp4'; // Usa nome único para o vídeo
+                a.download = 'video.mp4'; // Baixa o vídeo como arquivo mp4
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -209,20 +199,29 @@
             };
         }
 
-        // Função para capturar foto
-        function capturePhoto() {
+        // Função para capturar foto com o filtro aplicado
+        function capturePhotoWithFilter() {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
 
+            // Ajusta o tamanho do canvas para o tamanho do vídeo
             canvas.width = camera.videoWidth;
             canvas.height = camera.videoHeight;
 
+            // Desenha o vídeo no canvas
             context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+
+            // Desenha o filtro (Canvas.png) sobre o vídeo
+            const filter = document.getElementById('filter');
+            context.drawImage(filter, 0, 0, canvas.width, canvas.height);
+
+            // Converte o canvas para uma imagem PNG
             const photoDataUrl = canvas.toDataURL('image/png');
 
+            // Cria um link para download
             const a = document.createElement('a');
             a.href = photoDataUrl;
-            a.download = generateUniqueName('FormaturaVitoria') + '.png';  // Usa nome único para a foto
+            a.download = 'photo_with_filter.png';  // Baixa a foto com o filtro aplicado
             a.click();
         }
 
@@ -230,7 +229,7 @@
         function updateRecordingTime() {
             const minutes = Math.floor(recordingTime / 60);
             const seconds = recordingTime % 60;
-            recordingTimeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; 
+            recordingTimeDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             recordingTime++; // Incrementa o tempo
         }
 
@@ -259,27 +258,15 @@
             resetRecordingTime(); // Reseta o tempo de gravação quando mudar para vídeo
         });
 
-        // Função para capturar foto ou iniciar/terminar gravação de vídeo
-        captureButton.addEventListener('click', () => {
-            if (isPhotoMode) {
-                capturePhoto(); // Captura uma foto
-            } else {
-                if (isRecording) {
-                    mediaRecorder.stop(); // Para a gravação
-                    isRecording = false;
-                    captureButton.classList.remove('recording');
-                } else {
-                    mediaRecorder.start(); // Inicia a gravação
-                    isRecording = true;
-                    captureButton.classList.add('recording');
-                    recordingTime = 0; // Reseta o tempo de gravação
-                    recordingInterval = setInterval(updateRecordingTime, 1000); // Começa o contador
-                }
-            }
-        });
-
         // Inicia a câmera assim que a página carrega
         window.onload = startCamera;
+
+        // Captura a foto com filtro aplicado ao clicar no botão
+        captureButton.addEventListener('click', () => {
+            if (isPhotoMode) {
+                capturePhotoWithFilter(); // Captura a foto com o filtro
+            }
+        });
     </script>
 </body>
 </html>
