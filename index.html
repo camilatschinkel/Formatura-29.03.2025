@@ -154,15 +154,22 @@
 
         // Função para iniciar a câmera com áudio
         function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: true })
-                .then(stream => {
-                    camera.srcObject = stream;
-                    startRecording(stream); // Inicia a gravação de vídeo e áudio
-                })
-                .catch(err => {
-                    console.error('Erro ao acessar a câmera:', err);
-                    alert('Não foi possível acessar a câmera. Verifique as permissões.');
-                });
+            navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment', 
+                    width: { ideal: 1280 },  // Resolução HD (1280x720)
+                    height: { ideal: 720 }
+                }, 
+                audio: true 
+            })
+            .then(stream => {
+                camera.srcObject = stream;
+                startRecording(stream); // Inicia a gravação de vídeo e áudio
+            })
+            .catch(err => {
+                console.error('Erro ao acessar a câmera:', err);
+                alert('Não foi possível acessar a câmera. Verifique as permissões.');
+            });
         }
 
         // Função para iniciar a gravação de vídeo e áudio
@@ -262,18 +269,19 @@
             }
         });
 
-        // Função para desenhar o filtro no canvas
+        // Função para desenhar o filtro sobre o vídeo
         function drawFilter() {
             filterCanvas.width = camera.videoWidth;
             filterCanvas.height = camera.videoHeight;
+
             ctx.clearRect(0, 0, filterCanvas.width, filterCanvas.height);
-            ctx.drawImage(camera, 0, 0, filterCanvas.width, filterCanvas.height); // Desenha o vídeo
-            ctx.drawImage(filterImage, 0, 0, filterCanvas.width, filterCanvas.height); // Aplica o filtro
+            ctx.drawImage(camera, 0, 0, filterCanvas.width, filterCanvas.height);
+            ctx.drawImage(filterImage, 0, 0, filterCanvas.width, filterCanvas.height);
         }
 
-        // Desenhar o filtro em tempo real
-        camera.addEventListener('play', () => {
-            setInterval(drawFilter, 30); // Atualiza a cada 30ms
+        // Desenha o filtro no canvas a cada frame
+        camera.addEventListener('play', function () {
+            setInterval(drawFilter, 1000 / 30); // 30 FPS
         });
 
         // Inicia a câmera assim que a página carrega
