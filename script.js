@@ -12,59 +12,20 @@ let cameraFacing = 'user';
 let isRecording = false;
 let capture;
 
-async function checkCameraPermissions() {
-    try {
-        const status = await navigator.permissions.query({ name: 'camera' });
-        if (status.state === 'granted') {
-            return true;
-        } else {
-            return navigator.mediaDevices.getUserMedia({ video: true });
-        }
-    } catch (err) {
-        console.error('Erro ao verificar permissões:', err);
-        return false;
-    }
-}
-
-async function getCameraStream(facingMode) {
-    const constraints = {
-        video: { facingMode: facingMode },
-        audio: true
-    };
-    try {
-        return await navigator.mediaDevices.getUserMedia(constraints);
-    } catch (error) {
-        console.error('Erro ao obter stream da câmera:', error);
-        return null;
-    }
-}
-
 async function startWebcam() {
     try {
-        if (await checkCameraPermissions()) {
-            let stream = await getCameraStream({ exact: cameraFacing });
-            if (!stream && cameraFacing === 'environment') {
-                stream = await getCameraStream('environment');
-            }
-            if (!stream) {
-                stream = await getCameraStream('user');
-            }
-            if (stream) {
-                if (capture) {
-                    capture.remove();
-                }
-                capture = createCapture(VIDEO);
-                capture.size(window.innerWidth, window.innerHeight);
-                capture.hide();
-                return;
-            }
-            alert('Nenhuma câmera disponível.');
-        } else {
-            alert('Permissões de câmera não concedidas.');
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: cameraFacing },
+            audio: true
+        });
+        if (capture) {
+            capture.remove();
         }
+        capture = createCapture(VIDEO);
+        capture.size(windowWidth, windowHeight); // Ajusta o tamanho da captura ao tamanho da tela
+        capture.hide();
     } catch (err) {
         console.error('Erro ao acessar a webcam:', err);
-        alert('Erro ao acessar a webcam: ' + err.message);
     }
 }
 
