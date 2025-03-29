@@ -114,4 +114,3 @@ photoButton.addEventListener('click', takePhoto);
 recordButton.addEventListener('click', startRecord);
 
 startWebcam();
-startWebcam();
