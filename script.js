@@ -26,22 +26,39 @@ async function checkCameraPermissions() {
     }
 }
 
+async function getCameraStream(facingMode) {
+    const constraints = {
+        video: { facingMode: facingMode },
+        audio: true
+    };
+    try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+        console.error('Erro ao obter stream da câmera:', error);
+        return null;
+    }
+}
+
 async function startWebcam() {
     try {
         if (await checkCameraPermissions()) {
-            const constraints = {
-                video: { facingMode: { exact: cameraFacing } },
-                audio: true
-            };
-
-            stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-            if (capture) {
-                capture.remove();
+            let stream = await getCameraStream({ exact: cameraFacing });
+            if (!stream && cameraFacing === 'environment') {
+                stream = await getCameraStream('environment');
             }
-            capture = createCapture(VIDEO);
-            capture.size(window.innerWidth, window.innerHeight);
-            capture.hide();
+            if (!stream) {
+                stream = await getCameraStream('user');
+            }
+            if (stream) {
+                if (capture) {
+                    capture.remove();
+                }
+                capture = createCapture(VIDEO);
+                capture.size(window.innerWidth, window.innerHeight);
+                capture.hide();
+                return;
+            }
+            alert('Nenhuma câmera disponível.');
         } else {
             alert('Permissões de câmera não concedidas.');
         }
