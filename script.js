@@ -14,18 +14,28 @@ let capture;
 
 async function startWebcam() {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: cameraFacing },
+        const constraints = {
+            video: { facingMode: { exact: cameraFacing } },
             audio: true
-        });
+        };
+
+        // Verifica se a câmera traseira está disponível
+        if (cameraFacing === 'environment') {
+            constraints.video.facingMode = 'environment';
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+
         if (capture) {
             capture.remove();
         }
         capture = createCapture(VIDEO);
-        capture.size(windowWidth, windowHeight); // Ajusta o tamanho da captura ao tamanho da tela
+        capture.size(window.innerWidth, window.innerHeight);
         capture.hide();
     } catch (err) {
         console.error('Erro ao acessar a webcam:', err);
+        // Exibe uma mensagem de erro para o usuário
+        alert('Erro ao acessar a webcam: ' + err.message);
     }
 }
 
@@ -95,6 +105,7 @@ flipButton.addEventListener('click', flipCamera);
 photoButton.addEventListener('click', takePhoto);
 recordButton.addEventListener('click', startRecord);
 
+
 function gerarNomeArquivo() {
     const now = new Date();
     const year = now.getFullYear();
@@ -108,6 +119,8 @@ function gerarNomeArquivo() {
     const filename = `Formatura Vitória Dzwieleski_${NewData}.png`;
     return filename;
   }
-
+flipButton.addEventListener('click', flipCamera);
+photoButton.addEventListener('click', takePhoto);
+recordButton.addEventListener('click', startRecord);
 
 startWebcam();

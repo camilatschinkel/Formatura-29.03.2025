@@ -3,12 +3,12 @@ let canvas;
 let filterImage;
 
 function setup() {
-  canvas = createCanvas(windowWidth, windowHeight); // Ajusta o tamanho do canvas ao tamanho da tela
+  canvas = createCanvas(window.innerWidth, window.innerHeight);
   canvas.parent('p5-canvas-container');
 
   video = createCapture(VIDEO);
   console.log("Câmera iniciada com sucesso!");
-  video.size(windowWidth, windowHeight); // Ajusta o tamanho do vídeo ao tamanho da tela
+  video.size(window.innerWidth, window.innerHeight);
   video.hide();
 
   filterImage = loadImage('https://i.postimg.cc/k5PckJLb/85130723-c7a6-4d13-91a8-f4788a95c5ce-20250316-154127-0000.png');
@@ -16,10 +16,11 @@ function setup() {
 
 function draw() {
   background(220);
-  image(video, 0, 0, windowWidth, windowHeight); // Ajusta o tamanho da imagem ao tamanho da tela
+  image(video, 0, 0, window.innerWidth, window.innerHeight);
 
-  image(filterImage, 0, 0, windowWidth, windowHeight); // Ajusta o tamanho do filtro ao tamanho da tela
+  image(filterImage, 0, 0, window.innerWidth, window.innerHeight);
 }
+
 
 function takeSnapshot() {
   save(filename);
