@@ -12,20 +12,42 @@ let cameraFacing = 'user';
 let isRecording = false;
 let capture;
 
+async function checkCameraPermissions() {
+    try {
+        const status = await navigator.permissions.query({ name: 'camera' });
+        if (status.state === 'granted') {
+            return true;
+        } else {
+            return navigator.mediaDevices.getUserMedia({ video: true });
+        }
+    } catch (err) {
+        console.error('Erro ao verificar permissões:', err);
+        return false;
+    }
+}
+
 async function startWebcam() {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: cameraFacing } },
-            audio: true
-        });
-        if (capture) {
-            capture.remove();
+        if (await checkCameraPermissions()) {
+            const constraints = {
+                video: { facingMode: { exact: cameraFacing } },
+                audio: true
+            };
+
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+            if (capture) {
+                capture.remove();
+            }
+            capture = createCapture(VIDEO);
+            capture.size(window.innerWidth, window.innerHeight);
+            capture.hide();
+        } else {
+            alert('Permissões de câmera não concedidas.');
         }
-        capture = createCapture(VIDEO);
-        capture.size(window.innerWidth, window.innerHeight);
-        capture.hide();
     } catch (err) {
         console.error('Erro ao acessar a webcam:', err);
+        alert('Erro ao acessar a webcam: ' + err.message);
     }
 }
 
@@ -95,7 +117,6 @@ flipButton.addEventListener('click', flipCamera);
 photoButton.addEventListener('click', takePhoto);
 recordButton.addEventListener('click', startRecord);
 
-
 function gerarNomeArquivo() {
     const now = new Date();
     const year = now.getFullYear();
@@ -109,8 +130,6 @@ function gerarNomeArquivo() {
     const filename = `Formatura Vitória Dzwieleski_${NewData}.png`;
     return filename;
   }
-flipButton.addEventListener('click', flipCamera);
-photoButton.addEventListener('click', takePhoto);
-recordButton.addEventListener('click', startRecord);
+
 
 startWebcam();
