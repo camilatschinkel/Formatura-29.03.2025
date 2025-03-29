@@ -27,10 +27,10 @@ body {
 }
 
 canvas {
-  width: 100%; /* O canvas ocupa toda a largura do container */
-  height: auto; /* A altura se ajusta automaticamente */
-  max-height: 90vh; /* Define uma altura máxima para evitar que o vídeo ocupe toda a tela em notebooks */
-  object-fit: contain; /* Mantém a proporção da imagem */
+  width: 100%;
+  height: auto;
+  max-height: 90vh;
+  object-fit: contain;
 }
 
 #controls {
@@ -40,6 +40,7 @@ canvas {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 10;
 }
 
 #controls button {
