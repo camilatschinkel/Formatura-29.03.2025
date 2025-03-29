@@ -1,93 +1,117 @@
-const flipButton = document.getElementById('flip-camera');
-const photoButton = document.getElementById('take-photo');
-const recordButton = document.getElementById('record-button');
-const recordTime = document.getElementById('record-time');
-const mediaContainer = document.getElementById('media-container');
+const camera = document.getElementById('camera');
+const captureButton = document.getElementById('captureButton');
+const canvas = document.getElementById('canvas');
+const contexto = canvas.getContext('2d');
+const downloadLink = document.getElementById('downloadLink');
+const downloadVideoLink = document.getElementById('downloadVideoLink');
 
-let stream;
-let recorder;
-let chunks = [];
-let startTime;
-let cameraFacing = 'user';
+const photoModeButton = document.getElementById('photoMode');
+const videoModeButton = document.getElementById('videoMode');
+
+let mediaRecorder;
+let recordedChunks = [];
 let isRecording = false;
+let isPhotoMode = true;
 
-async function startWebcam() {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: cameraFacing },
-            audio: true
+// Carregar a imagem do filtro (moldura) do arquivo "Canvas.png"
+const filterImage = new Image();
+filterImage.src = 'Canvas.png'; // Caminho para a imagem local "Canvas.png"
+
+// Função para iniciar a câmera
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' },
+        audio: true // Solicita permissão para o microfone
+    })
+        .then(stream => {
+            camera.srcObject = stream;
+
+            // Desabilita o áudio no stream (não reproduz no site, mas grava)
+            const audioTracks = stream.getAudioTracks();
+            audioTracks.forEach(track => track.enabled = false); // Desabilita o áudio
+
+            // Inicia o mediaRecorder para gravação (se necessário)
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = (event) => {
+                recordedChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                downloadVideoLink.href = url;
+                downloadVideoLink.style.display = 'block';
+                downloadVideoLink.download = 'video.webm';
+            };
+        })
+        .catch(err => {
+            console.error('Erro ao acessar a câmera e microfone:', err);
+            alert('Não foi possível acessar a câmera ou microfone. Verifique as permissões.');
         });
-    } catch (err) {
-        console.error('Erro ao acessar a webcam:', err);
+}
+
+// Função para capturar uma foto com o filtro (moldura) aplicado com delay
+function capturePhoto() {
+    // Aguardar até que a imagem do filtro tenha sido carregada
+    filterImage.onload = function() {
+        const largura = camera.videoWidth;
+        const altura = camera.videoHeight;
+
+        canvas.width = largura;
+        canvas.height = altura;
+
+        // Desenha o vídeo no canvas
+        contexto.drawImage(camera, 0, 0, largura, altura);
+
+        // Desenha o filtro (moldura) sobre a imagem capturada
+        contexto.drawImage(filterImage, 0, 0, largura, altura);
+
+        // Converte a imagem para base64 e faz o download
+        const fotoBase64 = canvas.toDataURL('image/png');
+        downloadLink.href = fotoBase64;
+        downloadLink.style.display = 'block';
+        downloadLink.click();  // Baixa automaticamente a foto com o filtro
+    };
+
+    // Se a imagem já estiver carregada, chama a função de captura imediatamente
+    if (filterImage.complete) {
+        filterImage.onload();
     }
 }
 
-function flipCamera() {
-    cameraFacing = cameraFacing === 'user' ? 'environment' : 'user';
-    stopWebcam();
-    startWebcam();
-    window.location.reload();
-}
+// Alterna entre os modos de foto e vídeo
+photoModeButton.addEventListener('click', () => {
+    isPhotoMode = true;
+    photoModeButton.classList.add('active');
+    videoModeButton.classList.remove('active');
+    captureButton.innerHTML = '<i class="fas fa-camera"></i>';  // Ícone de foto
+    captureButton.classList.remove('recording');
+});
 
-function takePhoto() {
-    takeSnapshot();
-}
+videoModeButton.addEventListener('click', () => {
+    isPhotoMode = false;
+    videoModeButton.classList.add('active');
+    photoModeButton.classList.remove('active');
+    captureButton.innerHTML = '<i class="fas fa-video"></i>';  // Ícone de vídeo
+    captureButton.classList.remove('recording');
+});
 
-function startRecord() {
-    if (!isRecording) {
-        chunks = [];
-        recorder = new MediaRecorder(stream);
-        recorder.ondataavailable = event => chunks.push(event.data);
-        recorder.onstop = saveVideo;
-        recorder.start();
-        startTime = Date.now();
-        isRecording = true;
-        updateRecordTime(); // Chama a função aqui para iniciar o temporizador
+// Função de captura (foto ou vídeo)
+captureButton.addEventListener('click', () => {
+    if (isPhotoMode) {
+        capturePhoto();  // Captura foto
     } else {
-        recorder.stop();
-        isRecording = false;
+        if (isRecording) {
+            mediaRecorder.stop(); // Para a gravação
+            isRecording = false;
+            captureButton.innerHTML = '<i class="fas fa-video"></i>'; // Ícone de vídeo
+            captureButton.classList.remove('recording');
+        } else {
+            startRecording(); // Inicia a gravação com o filtro
+        }
     }
-}
+});
 
-function stopRecord() {
-    if (recorder && recorder.state === 'recording') {
-        recorder.stop();
-        isRecording = false;
-    }
-}
-
-function saveVideo() {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const videoUrl = URL.createObjectURL(blob);
-    saveMedia(videoUrl, 'video.webm');
-}
-
-function saveMedia(url, filename) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-
-    const media = filename.endsWith('.png') ? document.createElement('img') : document.createElement('video');
-    media.src = url;
-    media.controls = true;
-    mediaContainer.appendChild(media);
-}
-
-function updateRecordTime() {
-    if (isRecording) {
-        const elapsedTime = Date.now() - startTime;
-        const minutes = Math.floor(elapsedTime / 60000);
-        const seconds = ((elapsedTime % 60000) / 1000).toFixed(0);
-        recordTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        setTimeout(updateRecordTime, 1000);
-    } else {
-        recordTime.textContent = '00:00';
-    }
-}
-
-flipButton.addEventListener('click', flipCamera);
-photoButton.addEventListener('click', takePhoto);
-recordButton.addEventListener('click', startRecord);
-
-startWebcam();
+// Inicia a câmera assim que a página carrega
+window.onload = startCamera;
