@@ -15,7 +15,7 @@ function setup() {
 }
 
 function draw() {
-  background(220);
+  background(230);
   image(video, 0, 0, window.innerWidth, window.innerHeight);
 
   image(filterImage, 0, 0, window.innerWidth, window.innerHeight);
