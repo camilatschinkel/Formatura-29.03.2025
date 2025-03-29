@@ -14,18 +14,10 @@ let capture;
 
 async function startWebcam() {
     try {
-        const constraints = {
+        stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: { exact: cameraFacing } },
             audio: true
-        };
-
-        // Verifica se a câmera traseira está disponível
-        if (cameraFacing === 'environment') {
-            constraints.video.facingMode = 'environment';
-        }
-
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-
+        });
         if (capture) {
             capture.remove();
         }
@@ -34,8 +26,6 @@ async function startWebcam() {
         capture.hide();
     } catch (err) {
         console.error('Erro ao acessar a webcam:', err);
-        // Exibe uma mensagem de erro para o usuário
-        alert('Erro ao acessar a webcam: ' + err.message);
     }
 }
 
@@ -123,4 +113,5 @@ flipButton.addEventListener('click', flipCamera);
 photoButton.addEventListener('click', takePhoto);
 recordButton.addEventListener('click', startRecord);
 
+startWebcam();
 startWebcam();
