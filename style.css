@@ -64,16 +64,7 @@ canvas {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-#record-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
 
-#record-time {
-  font-size: 0.8em;
-  margin-top: 5px;
-}
 
 #media-container {
   background-color: #232323;
